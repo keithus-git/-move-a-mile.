@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Move a Mile — Keith's Step Challenge</title>
+<meta name="description" content="Keith is walking a mile, 100 steps at a time, in support of the Alan Shearer Foundation. Sponsor him a pound a step.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #12151a;
+    --panel: #1a1f27;
+    --lane: #f2efe9;
+    --track-red: #c1272d;
+    --pitch-green: #2c5c45;
+    --gold: #d9a441;
+    --ink: #f2efe9;
+    --ink-soft: #aab0bb;
+    --radius: 18px;
+  }
+  *{ box-sizing: border-box; }
+  body{
+    margin:0;
+    background: radial-gradient(120% 90% at 50% -10%, #232a35 0%, var(--bg) 55%);
+    color: var(--ink);
+    font-family: 'Work Sans', sans-serif;
+    display:flex;
+    justify-content:center;
+    padding: 32px 16px 56px;
+  }
+  main{
+    width: 100%;
+    max-width: 460px;
+  }
+  .eyebrow{
+    font-family:'Oswald', sans-serif;
+    font-weight:500;
+    font-size: 14px;
+    letter-spacing: 0.02em;
+    color: var(--gold);
+    margin: 0 0 6px;
+  }
+  h1{
+    font-family:'Oswald', sans-serif;
+    font-weight: 700;
+    font-size: 44px;
+    line-height: 1.02;
+    letter-spacing: -0.01em;
+    margin: 0 0 8px;
+  }
+  .sub{
+    color: var(--ink-soft);
+    font-size: 16px;
+    line-height: 1.45;
+    margin: 0 0 28px;
+    max-width: 40ch;
+  }
+  .track-wrap{ position: relative; margin-bottom: 22px; }
+  svg{ width: 100%; height: auto; display:block; }
+  .lane-line{ fill:none; stroke: rgba(242,239,233,0.14); stroke-width: 3; }
+  .track-base{ fill:none; stroke: rgba(242,239,233,0.22); stroke-width: 10; stroke-linecap: round; }
+  .track-progress{
+    fill:none; stroke: var(--track-red); stroke-width: 10; stroke-linecap: round;
+    stroke-dasharray: 0 100;
+    transition: stroke-dasharray 1.1s cubic-bezier(.4,0,.2,1);
+  }
+  .runner{ opacity: 0; transition: opacity 0.6s ease 0.5s; }
+  .runner.show{ opacity: 1; }
+  .stats{
+    background: var(--panel);
+    border: 1px solid rgba(242,239,233,0.08);
+    border-radius: var(--radius);
+    padding: 20px 22px;
+    margin-bottom: 22px;
+  }
+  .stats-top{ display:flex; justify-content: flex-end; align-items: baseline; margin-bottom: 14px; }
+  .day-label{ font-family:'Oswald', sans-serif; font-size: 15px; color: var(--ink-soft); }
+  .day-label b{ color: var(--ink); font-weight:600; }
+  .pct{ font-family:'Oswald', sans-serif; font-size: 15px; color: var(--gold); font-weight: 500; }
+  .step-count{ font-family:'Oswald', sans-serif; font-weight: 700; font-size: 40px; line-height: 1; margin-bottom: 4px; }
+  .step-count span{ font-size: 20px; font-weight: 500; color: var(--ink-soft); }
+  .step-sub{ font-size: 14px; color: var(--ink-soft); }
+  .bar{ margin-top: 16px; height: 8px; background: rgba(242,239,233,0.1); border-radius: 999px; overflow: hidden; }
+  .bar-fill{
+    height: 100%; width: 0%;
+    background: linear-gradient(90deg, var(--pitch-green), var(--gold));
+    border-radius: 999px;
+    transition: width 1.1s cubic-bezier(.4,0,.2,1);
+  }
+  p{ font-size: 15.5px; line-height: 1.6; color: #dde0e5; margin: 0 0 16px; }
+  p a{ color: var(--gold); }
+  .cta{
+    display:block; text-align:center;
+    background: var(--track-red); color: var(--lane);
+    font-family:'Oswald', sans-serif; font-weight: 600; font-size: 18px;
+    text-decoration:none; padding: 16px; border-radius: 12px; margin: 24px 0 10px;
+  }
+  .cta:active{ opacity: 0.85; }
+  .fine{ text-align:center; font-size: 13px; color: var(--ink-soft); margin-bottom: 32px; }
+  .fine a{ color: var(--ink-soft); }
+  .steps-list{ list-style: none; padding: 0; margin: 0 0 30px; display: grid; gap: 14px; }
+  .steps-list li{ display:flex; gap: 14px; align-items:flex-start; font-size: 15px; color: #dde0e5; line-height: 1.5; }
+  .num{
+    flex: none; width: 26px; height: 26px; border-radius: 50%;
+    border: 1px solid rgba(217,164,65,0.5); color: var(--gold);
+    font-family:'Oswald', sans-serif; font-size: 13px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  footer{ border-top: 1px solid rgba(242,239,233,0.1); padding-top: 18px; font-size: 13px; color: var(--ink-soft); line-height: 1.6; }
+  footer a{ color: var(--ink-soft); }
+
+  /* --- admin panel, hidden from casual visitors --- */
+  .admin-toggle{
+    display:block;
+    margin: 0 auto 30px;
+    background: none;
+    border: none;
+    color: var(--ink-soft);
+    font-size: 12.5px;
+    text-decoration: underline;
+    opacity: 0.6;
+    padding: 4px;
+  }
+  .admin-panel{
+    display: none;
+    background: var(--panel);
+    border: 1px solid rgba(242,239,233,0.08);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    margin: -14px 0 30px;
+  }
+  .admin-panel.open{ display: block; }
+  .admin-panel label{ display:block; font-size: 12.5px; color: var(--ink-soft); margin: 10px 0 6px; }
+  .admin-panel label:first-child{ margin-top: 0; }
+  .admin-panel input{
+    width: 100%;
+    background: rgba(242,239,233,0.06);
+    border: 1px solid rgba(242,239,233,0.18);
+    border-radius: 10px;
+    color: var(--ink);
+    font-family: 'Work Sans', sans-serif;
+    font-size: 16px;
+    padding: 10px 12px;
+  }
+  .admin-panel input:focus{ outline: none; border-color: var(--gold); }
+  #updateBtn{
+    width: 100%;
+    margin-top: 16px;
+    background: var(--gold);
+    color: #1a1408;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Oswald', sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+    padding: 12px;
+  }
+  #updateBtn:active{ opacity: 0.85; }
+  #updateBtn:disabled{ opacity: 0.5; }
+  .update-note{ font-size: 12.5px; color: var(--pitch-green); margin: 10px 0 0; min-height: 16px; }
+</style>
+</head>
+<body>
+<main>
+  <p class="eyebrow">In support of the Alan Shearer Foundation</p>
+  <h1>Move a Mile</h1>
+  <p class="sub">Eight years ago doctors told me I'd never walk again. I'm walking a mile anyway, 2,775 steps, for a good cause.</p>
+
+  <div class="track-wrap">
+    <svg viewBox="0 0 400 200">
+      <path class="lane-line" d="M 100 20 L 300 20 A 80 80 0 0 1 300 180 L 100 180 A 80 80 0 0 1 100 20" transform="translate(0,0) scale(0.94)" style="transform-origin:200px 100px" />
+      <path id="track" class="track-base" d="M 100 20 L 300 20 A 80 80 0 0 1 300 180 L 100 180 A 80 80 0 0 1 100 20" />
+      <path id="progress" class="track-progress" pathLength="100" d="M 100 20 L 300 20 A 80 80 0 0 1 300 180 L 100 180 A 80 80 0 0 1 100 20" />
+      <circle id="runner" class="runner" r="9" fill="#d9a441" stroke="#12151a" stroke-width="2" />
+    </svg>
+  </div>
+
+  <div class="stats">
+    <div class="stats-top">
+      <span class="pct" id="pctLabel">0%</span>
+    </div>
+    <div class="step-count"><span id="stepsSoFar">0</span> <span>/ 2,775 steps</span></div>
+    <div class="step-sub" id="stepsLeft">2,775 steps to go</div>
+    <div class="bar"><div class="bar-fill" id="barFill"></div></div>
+  </div>
+
+  <p>Eight years ago I broke my neck and was told I would never walk again.</p>
+  <p>I wasn't having that.</p>
+  <p>I've been pushing myself ever since, and now I've decided to set myself a new challenge: walk one mile.</p>
+  <p>I'm taking part alongside the Alan Shearer Foundation's Move a Mile campaign, which is raising £1 million towards a second hydrotherapy pool at the Alan Shearer Centre.</p>
+  <p>My challenge is a little different.</p>
+  <p>I currently average around 50 steps a day, and my average stride is 58cm. That means I need to complete 2,775 steps to cover a mile.</p>
+  <p>My first thought was to simply donate the £5 and drive a mile in my power wheelchair. But I thought, where's the challenge in that?</p>
+  <p>So I'm going to walk it instead.</p>
+  <p>I have no idea how long it's going to take me, but I'll get there.</p>
+  <p>I've already donated my £5, and I'm now asking friends, family and anyone following my journey to sponsor me and help raise even more for the Alan Shearer Foundation.</p>
+  <p>Whether it's 50p, £1, £5 or whatever you can afford, every donation will help towards the Foundation's £1 million mission.</p>
+  <p>This page tracks every step as I go.</p>
+  <p>Donations go directly to the Alan Shearer Foundation through JustGiving.</p>
+  <p>Follow my journey as I take on 2,775 steps, one step at a time, on <a href="https://www.facebook.com/keithdungait" target="_blank" rel="noopener">Facebook</a> or <a href="https://www.instagram.com/keith_dungait" target="_blank" rel="noopener">Instagram</a>.</p>
+
+  <a class="cta" id="ctaBtn" href="#" target="_blank" rel="noopener">Sponsor Keith</a>
+  <p class="fine">Donations go directly to the Alan Shearer Foundation through JustGiving. This page just tracks my progress.</p>
+
+  <ul class="steps-list">
+    <li><span class="num">1</span> I move. Steps logged here as I go.</li>
+    <li><span class="num">2</span> You sponsor. A pound a step is just a guide, give whatever suits you.</li>
+    <li><span class="num">3</span> You nominate three mates to move their own mile.</li>
+  </ul>
+
+  <button class="admin-toggle" id="adminToggle" type="button">Update total (Keith only)</button>
+  <div class="admin-panel" id="adminPanel">
+    <label for="stepsInput">Total steps so far</label>
+    <input type="number" id="stepsInput" min="0" max="2775" step="1" inputmode="numeric" placeholder="e.g. 850">
+    <label for="passwordInput">Your password</label>
+    <input type="password" id="passwordInput" autocomplete="off" placeholder="••••••">
+    <button id="updateBtn" type="button">Update</button>
+    <p class="update-note" id="updateNote">&nbsp;</p>
+  </div>
+
+  <footer>
+    This is my own personal challenge alongside the Foundation's official <a href="https://www.alanshearerfoundation.org.uk/the-million-pound-mission/move-a-mile/" target="_blank" rel="noopener">Move a Mile</a> campaign, which is raising £1m for a second hydrotherapy pool at the Alan Shearer Centre.
+  </footer>
+</main>
+
+<script>
+  // ---- Edit these to fit your challenge ----
+  const CONFIG = {
+    stepsPerDay: 400,
+    targetSteps: 2775,
+    totalDays: 7,                 // Math.ceil(2775 / 400)
+    donationUrl: 'https://www.justgiving.com/page/keith-dungait-1'
+  };
+  // -------------------------------------------
+
+  document.getElementById('ctaBtn').href = CONFIG.donationUrl;
+
+  const progressPath = document.getElementById('progress');
+  const trackPath = document.getElementById('track');
+  const barFill = document.getElementById('barFill');
+  const runner = document.getElementById('runner');
+  const stepsInput = document.getElementById('stepsInput');
+  const passwordInput = document.getElementById('passwordInput');
+  const updateBtn = document.getElementById('updateBtn');
+  const updateNote = document.getElementById('updateNote');
+  const adminToggle = document.getElementById('adminToggle');
+  const adminPanel = document.getElementById('adminPanel');
+
+  adminToggle.addEventListener('click', () => {
+    adminPanel.classList.toggle('open');
+  });
+
+  function render(stepsSoFar, animate){
+    stepsSoFar = Math.max(0, Math.min(stepsSoFar, CONFIG.targetSteps));
+    const percent = (stepsSoFar / CONFIG.targetSteps) * 100;
+    const stepsLeft = CONFIG.targetSteps - stepsSoFar;
+
+    document.getElementById('pctLabel').textContent = Math.round(percent) + '%';
+    document.getElementById('stepsSoFar').textContent = stepsSoFar.toLocaleString();
+    document.getElementById('stepsLeft').textContent = stepsLeft > 0
+      ? stepsLeft.toLocaleString() + ' steps to go'
+      : 'Mile complete';
+
+    const setVisuals = () => {
+      progressPath.style.strokeDasharray = percent.toFixed(1) + ' 100';
+      barFill.style.width = percent.toFixed(1) + '%';
+      const len = trackPath.getTotalLength();
+      const point = trackPath.getPointAtLength((percent / 100) * len);
+      runner.setAttribute('cx', point.x);
+      runner.setAttribute('cy', point.y);
+      if (!runner.classList.contains('show')) {
+        setTimeout(() => runner.classList.add('show'), 50);
+      }
+    };
+    if (animate) requestAnimationFrame(setVisuals); else setVisuals();
+  }
+
+  // Load the live total, shared by everyone who visits
+  async function loadSteps(){
+    try{
+      const res = await fetch('/.netlify/functions/get-steps');
+      const data = await res.json();
+      render(data.steps || 0, true);
+      stepsInput.value = data.steps || '';
+    }catch(err){
+      console.error('Could not load live steps', err);
+      render(0, true);
+    }
+  }
+  loadSteps();
+
+  updateBtn.addEventListener('click', async () => {
+    const raw = parseInt(stepsInput.value, 10);
+    const password = passwordInput.value;
+    if (isNaN(raw) || raw < 0) {
+      updateNote.style.color = '#c1272d';
+      updateNote.textContent = 'Pop a real number of steps in there.';
+      return;
+    }
+    if (!password) {
+      updateNote.style.color = '#c1272d';
+      updateNote.textContent = 'Enter your password.';
+      return;
+    }
+    updateBtn.disabled = true;
+    updateNote.style.color = 'var(--ink-soft)';
+    updateNote.textContent = 'Saving...';
+    try {
+      const res = await fetch('/.netlify/functions/update-steps', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ steps: raw, password })
+      });
+      if (res.status === 401) {
+        updateNote.style.color = '#c1272d';
+        updateNote.textContent = 'Wrong password.';
+        return;
+      }
+      if (!res.ok) {
+        const errData = await res.json().catch(() => null);
+        if (errData && errData.error === 'setup_needed') {
+          updateNote.style.color = '#c1272d';
+          updateNote.textContent = 'One-off setup step needed, check the update-steps function logs in Netlify.';
+          return;
+        }
+        if (errData && errData.error === 'save_failed') {
+          updateNote.style.color = '#c1272d';
+          updateNote.textContent = 'Save failed: ' + (errData.detail || 'unknown error, check function logs.');
+          return;
+        }
+        throw new Error('Update failed');
+      }
+      const data = await res.json();
+      render(data.steps, true);
+      passwordInput.value = '';
+      updateNote.style.color = 'var(--pitch-green)';
+      updateNote.textContent = data.steps >= CONFIG.targetSteps
+        ? "That's the mile done. Nice one."
+        : 'Saved. Everyone visiting the page will see this now.';
+    } catch (err) {
+      console.error(err);
+      updateNote.style.color = '#c1272d';
+      updateNote.textContent = "Couldn't save that, try again.";
+    } finally {
+      updateBtn.disabled = false;
+    }
+  });
+
+  passwordInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') updateBtn.click();
+  });
+</script>
+</body>
+</html>
